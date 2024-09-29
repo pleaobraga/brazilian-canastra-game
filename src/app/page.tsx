@@ -1,101 +1,66 @@
-import Image from 'next/image'
+/* eslint-disable no-console */
+'use client'
+
+import { useEffect, useState } from 'react'
+import io, { Socket } from 'socket.io-client'
+
+import { Card } from '../../deck/deck.types'
+
+let socket: Socket
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          priority
-          alt="Next.js logo"
-          className="dark:invert"
-          height={38}
-          src="https://nextjs.org/icons/next.svg"
-          width={180}
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{' '}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [hand, setHand] = useState<Card[]>([])
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <Image
-              alt="Vercel logomark"
-              className="dark:invert"
-              height={20}
-              src="https://nextjs.org/icons/vercel.svg"
-              width={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          <Image
-            aria-hidden
-            alt="File icon"
-            height={16}
-            src="https://nextjs.org/icons/file.svg"
-            width={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          <Image
-            aria-hidden
-            alt="Window icon"
-            height={16}
-            src="https://nextjs.org/icons/window.svg"
-            width={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          <Image
-            aria-hidden
-            alt="Globe icon"
-            height={16}
-            src="https://nextjs.org/icons/globe.svg"
-            width={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  useEffect(() => {
+    // Initialize socket connection
+    socket = io()
+
+    // Listen for the initial hand from the server
+    socket.on('initialHand', (initialHand: Card[]) => {
+      console.log('Received initial hand:', initialHand)
+      setHand(initialHand)
+    })
+
+    // Listen for cards played by any player
+    socket.on(
+      'cardPlayed',
+      ({ playerId, card }: { playerId: string; card: Card }) => {
+        console.log(`Player ${playerId} played:`, card)
+        // Update game state as needed
+      }
+    )
+
+    // Handle errors from the server
+    socket.on('error', (errorMessage: string) => {
+      console.error('Error from server:', errorMessage)
+    })
+
+    // Cleanup on unmount
+    return () => {
+      socket.disconnect()
+    }
+  }, [])
+
+  // Function to play a card
+  const playCard = (card: Card) => {
+    socket.emit('playCard', card)
+    // Optimistically update the local state
+    setHand((prevHand) =>
+      prevHand.filter((c) => !(c.suit === card.suit && c.rank === card.rank))
+    )
+  }
+
+  return (
+    <div>
+      <h1>Your Hand</h1>
+      <ul>
+        {hand.map((card, index) => (
+          <li key={index}>
+            {card.rank} of {card.suit}{' '}
+            <button onClick={() => playCard(card)}>Play</button>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
