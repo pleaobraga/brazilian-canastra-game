@@ -4,22 +4,31 @@
 import { useEffect, useState } from 'react'
 import io, { Socket } from 'socket.io-client'
 
-import { Card } from '../../deck/deck.types'
+import { Card } from '../utils/deck/deck.types'
 
 let socket: Socket
 
 export default function Home() {
   const [hand, setHand] = useState<Card[]>([])
+  const [numberPlayers, setNumberPlayers] = useState(0)
 
   useEffect(() => {
     // Initialize socket connection
     socket = io()
 
-    // Listen for the initial hand from the server
-    socket.on('initialHand', (initialHand: Card[]) => {
-      console.log('Received initial hand:', initialHand)
-      setHand(initialHand)
+    socket.on('players', (players: number) => {
+      setNumberPlayers(players)
     })
+
+    // Listen for the initial hand from the server
+    socket.on(
+      'initialHand',
+      ({ initialHand, deck }: { initialHand: Card[]; deck: Card[] }) => {
+        console.log('Received initial hand:', initialHand)
+        console.log('deck', deck)
+        setHand(initialHand)
+      }
+    )
 
     // Listen for cards played by any player
     socket.on(
@@ -56,11 +65,12 @@ export default function Home() {
       <ul>
         {hand.map((card, index) => (
           <li key={index}>
-            {card.rank} of {card.suit}{' '}
+            {card?.rank} of {card?.suit}{' '}
             <button onClick={() => playCard(card)}>Play</button>
           </li>
         ))}
       </ul>
+      <div>Number of players = {numberPlayers}</div>
     </div>
   )
 }

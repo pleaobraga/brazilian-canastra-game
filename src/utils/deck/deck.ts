@@ -22,8 +22,8 @@ export const shuffleCards = (deck: Deck): Deck => {
 
     const temp = newDeck[currentIndex]
 
-    deck[currentIndex] = newDeck[randomIndex]
-    deck[randomIndex] = temp
+    newDeck[currentIndex] = newDeck[randomIndex]
+    newDeck[randomIndex] = temp
   }
 
   return newDeck

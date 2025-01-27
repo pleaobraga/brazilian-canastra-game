@@ -2,16 +2,8 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "ES2020",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "types": [
-      "jest",
-      "@testing-library/jest-dom",
-      "node"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "types": ["jest", "@testing-library/jest-dom", "node"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -28,9 +20,7 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
     "noEmit": false, // Changed to false
     "outDir": "dist", // Added this line
@@ -42,9 +32,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "server.ts", // Ensure your server file is included
-    "./deck/**/*.ts"
+    "src/utils/deck/**/*.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

@@ -6,8 +6,8 @@ import express, { Request, Response } from 'express'
 import next from 'next'
 import { Server } from 'socket.io'
 
-import * as deckUtils from './deck' // Adjust the path if necessary
-import { Card, Deck } from './deck/deck.types'
+import * as deckUtils from './src/utils/deck' // Adjust the path if necessary
+import { Card, Deck } from './src/utils/deck/deck.types'
 
 const dev = process.env.NODE_ENV !== 'production'
 const app = next({ dev })
@@ -25,6 +25,9 @@ const gameState: GameState = {
   players: {},
 }
 
+gameState.deck = deckUtils.createDeck()
+gameState.deck = deckUtils.shuffleCards(gameState.deck)
+
 app.prepare().then(() => {
   const server = express()
   const httpServer = http.createServer(server)
@@ -33,12 +36,6 @@ app.prepare().then(() => {
   // Socket.IO connection handler
   io.on('connection', (socket) => {
     console.log('New client connected:', socket.id)
-
-    // Initialize the deck if it's empty
-    if (gameState.deck.length === 0) {
-      gameState.deck = deckUtils.createDeck()
-      gameState.deck = deckUtils.shuffleCards(gameState.deck)
-    }
 
     // Add the new player to the game state
     gameState.players[socket.id] = {
@@ -55,8 +52,13 @@ app.prepare().then(() => {
     gameState.players[socket.id].hand = playersHands[0]
     gameState.deck = deck
 
+    io.emit('players', Object.keys(gameState.players).length)
+
     // Send the player's initial hand
-    socket.emit('initialHand', gameState.players[socket.id].hand)
+    socket.emit('initialHand', {
+      initialHand: gameState.players[socket.id].hand,
+      deck: gameState.deck,
+    })
 
     // Listen for the 'playCard' event from the client
     socket.on('playCard', (card: Card) => {
@@ -79,6 +81,7 @@ app.prepare().then(() => {
     socket.on('disconnect', () => {
       console.log('Client disconnected:', socket.id)
       delete gameState.players[socket.id]
+      io.emit('players', Object.keys(gameState.players).length)
     })
   })
 
